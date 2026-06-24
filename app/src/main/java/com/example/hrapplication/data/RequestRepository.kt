@@ -207,4 +207,12 @@ class RequestRepository {
             false
         }
     }
+    fun isDateinFuture(dateRange: String): Boolean {
+        return try {
+            val startDateString = dateRange.split(" - ").firstOrNull() ?: dateRange 
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val startDate = sdf.parse(startDateString.trim())
+            startDate != null && startDate.after(Date())
+        } catch (e:Exception) { false }
+    }
 }
