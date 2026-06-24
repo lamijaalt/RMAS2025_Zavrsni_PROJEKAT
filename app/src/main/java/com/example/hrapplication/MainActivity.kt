@@ -71,6 +71,7 @@ class MainActivity : ComponentActivity() {
                         ) { backStackEntry ->
                             val id = backStackEntry.arguments?.getString("requestId") ?: ""
                             requests.find { it.id == id }?.let {
+                                val isFuture = requestViewModel.checkFutureRequest(it.date)
                                 DetailsScreen(
                                     it.type,
                                     it.status,
@@ -78,6 +79,7 @@ class MainActivity : ComponentActivity() {
                                     it.note,
                                     it.hrComment,
                                     it.deanComment,
+                                    isFuture = isFuture,
                                     onCancelRequest = {
                                         requestViewModel.cancelRequest(it)
                                         navController.popBackStack()
