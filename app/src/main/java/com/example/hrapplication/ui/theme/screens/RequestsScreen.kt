@@ -8,12 +8,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,6 +23,8 @@ import com.example.hrapplication.data.RequestItem
 import com.example.hrapplication.data.UserSession
 import com.example.hrapplication.ui.theme.viewmodel.RequestViewModel
 
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RequestsScreen(
     requests: List<RequestItem>,
@@ -36,6 +35,23 @@ fun RequestsScreen(
 
     val user by requestViewModel.currentUserState
 
+
+    var searchQuery by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+    var selectedFilter by remember { mutableStateOf("All status") }
+
+
+    val filteredRequests = requests.filter { request ->
+        val matchesFilter = when (selectedFilter) {
+            "All status" -> true
+            "New" -> request.status == "On hold"
+            "To Dean" -> request.status == "Pending Dean Approval"
+            else -> request.status.equals(selectedFilter, ignoreCase = true)
+        }
+        val matchesSearch = request.type.contains(searchQuery, ignoreCase = true) ||
+                request.date.contains(searchQuery, ignoreCase = true)
+        matchesFilter && matchesSearch
+    }
 
     LaunchedEffect(Unit) {
         val currentId = user?.id ?: UserSession.currentUser?.id
@@ -53,6 +69,63 @@ fun RequestsScreen(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 32.dp)
             )
+
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                placeholder = { Text("Search requests...", color = Color.Gray) },
+                leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.Gray) },
+                shape = RoundedCornerShape(25.dp),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    unfocusedBorderColor = Color.LightGray,
+                    focusedBorderColor = Color(0xFF8A282A)
+                )
+            )
+
+            Box {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
+                        .clickable { expanded = true },
+                    shape = RoundedCornerShape(25.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray),
+                    color = Color.White
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.FolderOpen, null, modifier = Modifier.size(20.dp), tint = Color.Gray)
+                        Spacer(Modifier.width(8.dp))
+                        Text(selectedFilter, modifier = Modifier.weight(1f), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Icon(Icons.Default.ArrowDropDown, null, tint = Color.Gray)
+                    }
+                }
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier.fillMaxWidth(0.9f)
+                ) {
+                    val options = listOf("All status", "New", "To Dean", "Approved", "Denied")
+                    options.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option) },
+                            onClick = {
+                                selectedFilter = option
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
 
 
             Row(
@@ -72,12 +145,25 @@ fun RequestsScreen(
             }
 
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(requests) { request ->
-                    RequestRow(request, onClick = { onElementClick(request) })
+            if (filteredRequests.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "No requests available",
+                        color = Color.Gray,
+                        fontSize = 16.sp
+                    )
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(filteredRequests) { request ->
+                        RequestRow(request, onClick = { onElementClick(request) })
+                    }
                 }
             }
         }
