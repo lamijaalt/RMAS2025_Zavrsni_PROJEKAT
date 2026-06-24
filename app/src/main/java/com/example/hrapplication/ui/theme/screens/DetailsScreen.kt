@@ -23,6 +23,7 @@ fun DetailsScreen(
     note: String,
     hrComment: String = "",
     deanComment: String = "",
+    isFuture: Boolean,
     onCancelRequest: () -> Unit = {},
     onBack: () -> Unit
 ) {
@@ -159,7 +160,7 @@ fun DetailsScreen(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-            if (status == "On hold" || status == "Pending Dean Approval") {
+            if (status == "On hold" || status == "Pending Dean Approval" || (status == "Approved" && isFuture)) {
                 OutlinedButton(
                     onClick = { showCancelDialog = true },
                     modifier = Modifier.weight(1f).height(50.dp),
