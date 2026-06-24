@@ -199,4 +199,8 @@ class RequestViewModel : ViewModel() {
             }
         }
     }
+    
+    fun checkFutureRequest(dateRange: String): Boolean {
+        return repository.isDateinFuture(dateRange)
+    }
 }
